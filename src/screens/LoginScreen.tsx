@@ -1,19 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as WebBrowser from 'expo-web-browser';
 import { RootStackParamList } from '../types';
 import { Button, Input } from '../components';
 import { theme } from '../theme';
 import { useAuthStore } from '../store';
+import supabaseService from '../services/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -25,6 +29,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ email: '', password: '' });
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const { signIn, isLoading, error, clearError } = useAuthStore();
 
@@ -58,10 +63,53 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     }
 
     clearError();
+    console.log('Attempting to sign in with:', email.trim());
     const success = await signIn(email.trim(), password);
+    console.log('Sign in result:', success);
 
-    if (!success && error) {
-      Alert.alert('Login Failed', error);
+    if (success) {
+      console.log('Sign in successful!');
+      // Navigation should happen automatically via AppNavigator
+    } else {
+      console.log('Sign in failed:', error);
+      Alert.alert('Login Failed', error || 'An unknown error occurred. Please try again.');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+
+      // Use Supabase's OAuth flow
+      const { data, error } = await supabaseService.client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'hotpotato://auth/callback',
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open the OAuth URL in the browser
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          'hotpotato://auth/callback'
+        );
+
+        if (result.type === 'success') {
+          // The auth state change will be handled by the listener in AppNavigator
+          console.log('[LoginScreen] OAuth success');
+        } else if (result.type === 'cancel') {
+          Alert.alert('Cancelled', 'Google sign in was cancelled');
+        }
+      }
+    } catch (error) {
+      console.error('[LoginScreen] Google sign in error:', error);
+      Alert.alert('Google Sign In Failed', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -107,6 +155,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 isLoading={isLoading}
                 fullWidth
                 size="large"
+              />
+
+              <View style={styles.dividerContainer}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.divider} />
+              </View>
+
+              <Button
+                title="Continue with Google"
+                onPress={handleGoogleSignIn}
+                isLoading={isGoogleLoading}
+                fullWidth
+                size="large"
+                variant="outline"
               />
 
               <View style={styles.signupContainer}>
@@ -162,6 +225,23 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: theme.spacing.md,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  dividerText: {
+    marginHorizontal: theme.spacing.md,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   signupContainer: {
     flexDirection: 'row',

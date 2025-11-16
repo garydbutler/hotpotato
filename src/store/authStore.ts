@@ -14,6 +14,8 @@ interface AuthState {
   signOut: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
+  setUser: (user: User | null) => void;
+  setAuthenticated: (isAuthenticated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -23,19 +25,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   signIn: async (email: string, password: string) => {
+    console.log('[AuthStore] Starting sign in...');
     set({ isLoading: true, error: null });
 
     const response = await supabaseService.signIn(email, password);
+    console.log('[AuthStore] Sign in response:', { success: response.success, error: response.error });
 
     if (response.success && response.data) {
+      console.log('[AuthStore] Setting authenticated state for user:', response.data.email);
       set({
         user: response.data,
         isAuthenticated: true,
         isLoading: false,
         error: null,
       });
+      console.log('[AuthStore] isAuthenticated set to true');
       return true;
     } else {
+      console.log('[AuthStore] Sign in failed:', response.error);
       set({
         error: response.error || 'Sign in failed',
         isLoading: false,
@@ -100,4 +107,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  setUser: (user: User | null) => set({ user }),
+
+  setAuthenticated: (isAuthenticated: boolean) => set({ isAuthenticated }),
 }));

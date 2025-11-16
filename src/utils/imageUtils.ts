@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 /**
  * Convert image URI to base64 string
@@ -28,7 +28,7 @@ export const imageUriToBase64 = async (uri: string): Promise<string> => {
   } else {
     // On native, use FileSystem
     return await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: 'base64',
     });
   }
 };

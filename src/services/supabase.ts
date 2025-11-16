@@ -1,12 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
 import env from '../config/env';
 import { Listing, User, ApiResponse } from '../types';
 import { imageUriToBase64 } from '../utils/imageUtils';
 
 class SupabaseService {
-  private client: SupabaseClient;
+  public client: SupabaseClient;
 
   constructor() {
     if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
@@ -14,6 +12,14 @@ class SupabaseService {
     }
 
     this.client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  }
+
+  // Set up auth state listener
+  onAuthStateChange(callback: (event: string, session: any) => void) {
+    return this.client.auth.onAuthStateChange((event, session) => {
+      console.log('[Supabase] Auth state changed:', event, session?.user?.email);
+      callback(event, session);
+    });
   }
 
   // Authentication Methods
@@ -50,19 +56,25 @@ class SupabaseService {
 
   async signIn(email: string, password: string): Promise<ApiResponse<User>> {
     try {
+      console.log('[Supabase] Signing in:', email);
       const { data, error } = await this.client.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log('[Supabase] Sign in response:', { data: data?.user?.email, error: error?.message });
+
       if (error) {
+        console.log('[Supabase] Sign in error:', error.message);
         return { success: false, error: error.message };
       }
 
       if (!data.user) {
+        console.log('[Supabase] No user data returned');
         return { success: false, error: 'No user data returned' };
       }
 
+      console.log('[Supabase] Sign in successful for user:', data.user.email);
       return {
         success: true,
         data: {
@@ -72,6 +84,7 @@ class SupabaseService {
         },
       };
     } catch (error) {
+      console.log('[Supabase] Sign in exception:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Sign in failed',

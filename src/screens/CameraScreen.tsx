@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Alert, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -133,28 +134,27 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing} ref={setCameraRef}>
-        <View style={styles.overlay}>
-          <View style={styles.topControls}>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
-              <Text style={styles.iconButtonText}>🔄</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.bottomControls}>
-            <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
-              <Text style={styles.galleryButtonText}>🖼️</Text>
-              <Text style={styles.galleryButtonLabel}>Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-              <View style={styles.captureButtonInner} />
-            </TouchableOpacity>
-
-            <View style={styles.placeholder} />
-          </View>
+      <CameraView style={styles.camera} facing={facing} ref={setCameraRef} />
+      <View style={styles.overlay}>
+        <View style={styles.topControls}>
+          <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
+            <Text style={styles.iconButtonText}>🔄</Text>
+          </TouchableOpacity>
         </View>
-      </CameraView>
+
+        <View style={styles.bottomControls}>
+          <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
+            <Text style={styles.galleryButtonText}>🖼️</Text>
+            <Text style={styles.galleryButtonLabel}>Gallery</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+            <View style={styles.captureButtonInner} />
+          </TouchableOpacity>
+
+          <View style={styles.placeholder} />
+        </View>
+      </View>
     </View>
   );
 };
@@ -191,7 +191,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'transparent',
     justifyContent: 'space-between',
   },

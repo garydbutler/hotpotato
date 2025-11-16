@@ -8,7 +8,8 @@ export default {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
-    newArchEnabled: true,
+    owner: process.env.EXPO_ACCOUNT_OWNER || undefined,
+    scheme: 'hotpotato',
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
@@ -39,6 +40,9 @@ export default {
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
       OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
       OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+      eas: {
+        projectId: '9370730b-5814-42ce-8a3b-2d495e4e403d',
+      },
     },
     plugins: [
       [
@@ -55,9 +59,14 @@ export default {
             'HotPotato needs access to your photo library to select photos of items you want to sell.',
         },
       ],
+      'expo-web-browser',
     ],
     web: {
       favicon: './assets/favicon.png',
+    },
+    updates: {
+      enabled: false,
+      fallbackToCacheTimeout: 0,
     },
   },
 };
